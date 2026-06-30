@@ -1,0 +1,768 @@
+Great! These are three of the most important **categorical encoding techniques** in Machine Learning. Let's understand each one with simple examples.
+
+---
+
+# Why do we need Encoding?
+
+Machine learning algorithms cannot understand text (categorical data).
+
+Example:
+
+| Gender |
+| ------ |
+| Male   |
+| Female |
+| Male   |
+
+A model cannot perform calculations on words like `"Male"` or `"Female"`, so we convert them into numbers. This process is called **encoding**.
+
+---
+
+# 1. One-Hot Encoding
+
+### What is it?
+
+One-Hot Encoding converts **each category into a separate binary (0/1) column**.
+
+### Example
+
+Original data:
+
+| Color |
+| ----- |
+| Red   |
+| Blue  |
+| Green |
+| Blue  |
+
+After One-Hot Encoding:
+
+| Color_Blue | Color_Green | Color_Red |
+| ---------- | ----------- | --------- |
+| 0          | 0           | 1         |
+| 1          | 0           | 0         |
+| 0          | 1           | 0         |
+| 1          | 0           | 0         |
+
+Only one column has a value of **1** for each row, and the rest are **0**.
+
+### Python Code
+
+```python
+from sklearn.preprocessing import OneHotEncoder
+
+ohe = OneHotEncoder(sparse_output=False)
+
+encoded = ohe.fit_transform(df[['Color']])
+
+encoded_df = pd.DataFrame(
+    encoded,
+    columns=ohe.get_feature_names_out(['Color'])
+)
+
+print(encoded_df)
+```
+
+### When to use One-Hot Encoding?
+
+Use it for **nominal categorical data**, where there is **no natural order**.
+
+Examples:
+
+* City
+* Country
+* Color
+* Department
+* Brand
+
+### Advantages
+
+* Doesn't introduce a false order.
+* Works well with Linear Regression, Logistic Regression, SVM, and Neural Networks.
+
+### Disadvantages
+
+If there are many categories (e.g., 1000 cities), it creates many new columns, increasing the dataset size.
+
+---
+
+# 2. Ordinal Encoding
+
+### What is it?
+
+Ordinal Encoding converts categories into numbers **while preserving their natural order**.
+
+### Example
+
+Education Level:
+
+| Education   |
+| ----------- |
+| High School |
+| Bachelor's  |
+| Master's    |
+| PhD         |
+
+After Ordinal Encoding:
+
+| Education |
+| --------- |
+| 0         |
+| 1         |
+| 2         |
+| 3         |
+
+Here, the order is meaningful:
+
+```
+High School < Bachelor's < Master's < PhD
+```
+
+### Python Code
+
+```python
+from sklearn.preprocessing import OrdinalEncoder
+
+oe = OrdinalEncoder()
+
+df['Education'] = oe.fit_transform(df[['Education']])
+```
+
+### Custom Order
+
+If your categories don't sort alphabetically, define the order manually:
+
+```python
+from sklearn.preprocessing import OrdinalEncoder
+
+oe = OrdinalEncoder(
+    categories=[['Low', 'Medium', 'High']]
+)
+
+df['Priority'] = oe.fit_transform(df[['Priority']])
+```
+
+Output:
+
+| Priority   |
+| ---------- |
+| Low → 0    |
+| Medium → 1 |
+| High → 2   |
+
+### When to use Ordinal Encoding?
+
+Only when the categories have a **real ranking**.
+
+Examples:
+
+* Low, Medium, High
+* Small, Medium, Large
+* Poor, Average, Good, Excellent
+* Education levels
+
+### Advantages
+
+* Keeps the natural order.
+* Uses only one column.
+
+### Disadvantages
+
+Never use it for categories with **no order**, such as city names or colors, because the model may incorrectly assume one category is "greater" than another.
+
+---
+
+# 3. Target Encoding
+
+### What is it?
+
+Target Encoding replaces each category with the **average value of the target variable** for that category.
+
+### Example
+
+Original data:
+
+| City      | Salary |
+| --------- | ------ |
+| Bangalore | 50000  |
+| Mysore    | 40000  |
+| Bangalore | 70000  |
+| Mysore    | 30000  |
+| Delhi     | 90000  |
+
+Calculate the average salary for each city:
+
+```
+Bangalore = (50000 + 70000) / 2 = 60000
+
+Mysore = (40000 + 30000) / 2 = 35000
+
+Delhi = 90000
+```
+
+Replace the categories:
+
+| City  |
+| ----- |
+| 60000 |
+| 35000 |
+| 60000 |
+| 35000 |
+| 90000 |
+
+### Python Code
+
+Using the `category_encoders` library:
+
+```python
+import category_encoders as ce
+
+encoder = ce.TargetEncoder(cols=['City'])
+
+df['City'] = encoder.fit_transform(df['City'], df['Salary'])
+```
+
+### When to use Target Encoding?
+
+It is useful when:
+
+* A feature has **many unique categories**.
+* You are solving a **supervised learning** problem (you have a target column).
+
+Examples:
+
+* Product ID
+* Customer ID
+* ZIP Code
+* Hospital Name
+* Airline
+
+### Advantages
+
+* Doesn't create many columns.
+* Often performs well with high-cardinality features.
+
+### Disadvantages
+
+* Can cause **data leakage** if applied before splitting the data.
+* Should be fitted only on the training data and then applied to the test data.
+
+---
+
+# Comparison
+
+| Feature                   | One-Hot Encoding | Ordinal Encoding | Target Encoding             |
+| ------------------------- | ---------------- | ---------------- | --------------------------- |
+| Number of columns         | Multiple         | One              | One                         |
+| Preserves order           | ❌ No             | ✅ Yes            | ❌ No                        |
+| Uses target variable      | ❌ No             | ❌ No             | ✅ Yes                       |
+| Suitable for nominal data | ✅ Yes            | ❌ No             | ✅ Yes                       |
+| Suitable for ordinal data | ❌ No             | ✅ Yes            | ❌ No                        |
+| Risk of data leakage      | ❌ No             | ❌ No             | ✅ Yes (if used incorrectly) |
+
+---
+
+# Real-world examples
+
+| Feature                                             | Best Encoding                                        |
+| --------------------------------------------------- | ---------------------------------------------------- |
+| Gender (Male/Female)                                | One-Hot Encoding or Label Encoding                   |
+| Smoker (Yes/No)                                     | One-Hot Encoding or Label Encoding                   |
+| Region (North, South, East, West)                   | One-Hot Encoding                                     |
+| Shirt Size (S, M, L, XL)                            | Ordinal Encoding                                     |
+| Customer Satisfaction (Poor, Fair, Good, Excellent) | Ordinal Encoding                                     |
+| Product ID (10,000+ unique values)                  | Target Encoding                                      |
+| ZIP Code                                            | Target Encoding                                      |
+| City (hundreds of unique values)                    | Target Encoding (or One-Hot if there are few cities) |
+
+### Easy way to remember
+
+* **One-Hot Encoding** → Categories with **no order** (Color, City, Region).
+* **Ordinal Encoding** → Categories with a **meaningful order** (Low → Medium → High).
+* **Target Encoding** → Categories are replaced with the **average target value**, especially useful when there are many unique categories.
+Excellent question. This is where many beginners get confused. Let's go deeper and understand **why some encoders accept 2D input, why others require 1D input, and when to use each one.**
+
+---
+
+# First, understand 1D vs 2D
+
+Suppose your dataset is:
+
+| Gender | Region | Age |
+| ------ | ------ | --- |
+| Male   | South  | 25  |
+| Female | North  | 30  |
+
+### Selecting one column
+
+```python
+df["Gender"]
+```
+
+Output:
+
+```
+0      Male
+1    Female
+```
+
+This is a **Series**, which is **1D**.
+
+Shape:
+
+```python
+df["Gender"].shape
+```
+
+Output:
+
+```
+(2,)
+```
+
+---
+
+### Selecting one column as a DataFrame
+
+```python
+df[["Gender"]]
+```
+
+Output:
+
+| Gender |
+| ------ |
+| Male   |
+| Female |
+
+This is a **DataFrame**, which is **2D**.
+
+Shape:
+
+```python
+df[["Gender"]].shape
+```
+
+Output:
+
+```
+(2,1)
+```
+
+---
+
+### Selecting multiple columns
+
+```python
+df[["Gender","Region"]]
+```
+
+Output:
+
+| Gender | Region |
+| ------ | ------ |
+| Male   | South  |
+| Female | North  |
+
+Shape:
+
+```
+(2,2)
+```
+
+---
+
+# Why does LabelEncoder fail?
+
+Suppose:
+
+```python
+from sklearn.preprocessing import LabelEncoder
+
+le = LabelEncoder()
+
+le.fit_transform(df[["Gender","Region"]])
+```
+
+Error:
+
+```
+ValueError
+```
+
+Why?
+
+Because **LabelEncoder was designed for only one feature**.
+
+Internally it expects
+
+```
+Male
+Female
+Male
+```
+
+not
+
+```
+Gender Region
+Male   South
+Female North
+```
+
+Its input must be
+
+```
+(n_samples,)
+```
+
+Example:
+
+```
+(100,)
+```
+
+NOT
+
+```
+(100,3)
+```
+
+---
+
+## Correct usage
+
+```python
+le.fit_transform(df["Gender"])
+```
+
+or
+
+```python
+le.fit_transform(df["Gender"].values)
+```
+
+Shape:
+
+```
+(100,)
+```
+
+---
+
+# Why OneHotEncoder accepts 2D?
+
+OneHotEncoder was designed for **feature matrices**, not a single label.
+
+Suppose
+
+```python
+df
+```
+
+| Gender | Region |
+| ------ | ------ |
+| Male   | South  |
+| Female | North  |
+
+You can directly do
+
+```python
+ohe.fit_transform(df[["Gender","Region"]])
+```
+
+Notice
+
+```python
+[["Gender","Region"]]
+```
+
+is 2D.
+
+Shape
+
+```
+(100,2)
+```
+
+OneHotEncoder knows
+
+```
+Column 1
+
+Gender
+
+Column 2
+
+Region
+```
+
+It encodes each column independently.
+
+Result
+
+```
+Gender_Female
+Gender_Male
+Region_North
+Region_South
+```
+
+---
+
+# Why not use LabelEncoder for multiple columns?
+
+Imagine
+
+```
+Gender
+
+Male
+Female
+```
+
+Encoder learns
+
+```
+Female → 0
+
+Male → 1
+```
+
+Now next column
+
+```
+Region
+
+North
+South
+East
+```
+
+It now forgets Gender.
+
+Learns
+
+```
+East → 0
+
+North → 1
+
+South → 2
+```
+
+One encoder cannot remember mappings for multiple features simultaneously.
+
+That's why we write
+
+```python
+for col in obj_cols:
+
+    le = LabelEncoder()
+
+    xtrain[col] = le.fit_transform(xtrain[col])
+```
+
+Every column gets its own encoder.
+
+---
+
+# OrdinalEncoder
+
+People confuse
+
+```
+LabelEncoder
+```
+
+with
+
+```
+OrdinalEncoder
+```
+
+They are different.
+
+Suppose
+
+```
+Education
+
+High School
+
+Bachelor
+
+Master
+
+PhD
+```
+
+We do
+
+```python
+from sklearn.preprocessing import OrdinalEncoder
+
+oe = OrdinalEncoder()
+
+oe.fit_transform(df[["Education"]])
+```
+
+Notice
+
+```
+[["Education"]]
+```
+
+NOT
+
+```
+["Education"]
+```
+
+Why?
+
+Because OrdinalEncoder expects
+
+```
+(n_samples,n_features)
+```
+
+Example
+
+```
+(100,1)
+```
+
+It works on features.
+
+LabelEncoder works on labels.
+
+---
+
+# Multiple columns with OrdinalEncoder
+
+Suppose
+
+| Size  | Education |
+| ----- | --------- |
+| Small | Bachelor  |
+| Large | Master    |
+
+You can do
+
+```python
+oe.fit_transform(df[["Size","Education"]])
+```
+
+because both are features.
+
+---
+
+# TargetEncoder
+
+TargetEncoder also works on features.
+
+Suppose
+
+| City      | Salary |
+| --------- | ------ |
+| Delhi     | 60000  |
+| Bangalore | 70000  |
+
+We do
+
+```python
+encoder.fit_transform(
+    df[["City"]],
+    df["Salary"]
+)
+```
+
+Notice
+
+```
+X
+
+↓
+
+2D
+```
+
+and
+
+```
+y
+
+↓
+
+1D
+```
+
+because
+
+TargetEncoder learns
+
+```
+City
+
+↓
+
+Average Salary
+```
+
+---
+
+# Why does OneHotEncoder need double brackets?
+
+Wrong
+
+```python
+ohe.fit_transform(df["Gender"])
+```
+
+Shape
+
+```
+(100,)
+```
+
+OneHotEncoder expects
+
+```
+(100,1)
+```
+
+Correct
+
+```python
+ohe.fit_transform(df[["Gender"]])
+```
+
+Shape
+
+```
+(100,1)
+```
+
+---
+
+# Memory trick
+
+| Encoder        | Input Type                               | Accepts Multiple Columns? | Typical Use                                       |
+| -------------- | ---------------------------------------- | ------------------------- | ------------------------------------------------- |
+| LabelEncoder   | **1D** (`df["col"]`)                     | ❌ No                      | Target labels or one categorical column at a time |
+| OneHotEncoder  | **2D** (`df[["col"]]` or `df[obj_cols]`) | ✅ Yes                     | Nominal feature columns                           |
+| OrdinalEncoder | **2D** (`df[["col"]]` or `df[obj_cols]`) | ✅ Yes                     | Ordered feature columns                           |
+| TargetEncoder  | **2D X + 1D y**                          | ✅ Yes                     | High-cardinality categorical features             |
+
+---
+
+## The easiest rule to remember
+
+* **`LabelEncoder`** → **1D only** → `df["column"]`
+* **`OneHotEncoder`** → **2D** → `df[["column"]]` or `df[obj_cols]`
+* **`OrdinalEncoder`** → **2D** → `df[["column"]]` or `df[obj_cols]`
+* **`TargetEncoder`** → **2D features + 1D target** → `encoder.fit_transform(X, y)`
+
+Understanding these input shapes (`(n_samples,)` vs. `(n_samples, n_features)`) is the key to knowing why some encoders work directly on multiple columns while others produce shape-related errors.
+
